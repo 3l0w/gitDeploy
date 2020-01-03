@@ -1,0 +1,28 @@
+#!/bin/bash
+pwd='/home/git/rep/'
+read -p 'Name for the new repository : ' name
+if [ -d "/home/git/rep/$name".git"" ];then
+echo Repository alredy exist. Aborted.
+else
+read -p 'Nodejs autodeploy? [y or n] : ' nodejs
+cd /home/git/rep/
+git init --bare $name".git"
+cd $name".git"
+cd hooks/
+rm *
+if test "$nodejs" = "y"; then
+mkdir /home/git/deploy/$name".git"
+echo '#!/bin/bash' > post-receive
+echo "GIT_NAME="$name".git" >> post-receive
+cat /home/git/script/post-receive >> post-receive                                                                     
+chmod +x post-receive
+fi
+cd ..
+git update-server-info
+cd ..
+sudo chmod 777 $name".git"
+#sudo chown -R www-data $name".git"
+sudo chown -R root $name".git"
+echo "Repository sucessfuly created in :$pwd$name.git"
+echo "You can set a new remote with: git remote add origin ssh://USER@SERVER_IP:/home/git/rep/$name.git"
+fi

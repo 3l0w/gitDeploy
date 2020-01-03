@@ -1,0 +1,116 @@
+#!/bin/bash 
+NAME=$2
+DAEMON="/home/git/script/exec.sh $NAME"
+ 
+d_start () {
+    echo "Starting $NAME"
+    screen -dmS $NAME /home/git/script/exec.sh $NAME
+    screenlist=`sudo ls /root/.screen/ | grep $NAME`
+    screenname=`echo $screenlist | cut -d'.' -f 2`
+    echo $screenname
+    if [ "$screenname.git" = "$NAME" ];then
+    echo "$NAME successfuly started."
+    else
+    echo "An error was occured. try: deamon log $NAME"
+    fi
+}
+ 
+d_stop (){
+    screenlist=`sudo ls  /root/.screen/ | grep $NAME`
+    id=`echo $screenlist | cut -d'.' -f 1`
+    echo stopping $NAME
+    sudo kill $id
+    screenlist=`sudo ls  /root/.screen/ | grep $NAME`
+    screenname=`echo $screenlist | cut -d'.' -f 2`
+    if [ ! "$screenname" = "$NAME" ];then
+    echo "$NAME successfuly stoppped."
+    else
+    echo "An error was occured. try: deamon forcestop"
+    fi
+}
+if [ -n "$2" ]; then
+case "$1" in
+        start)
+            screenlist=`sudo ls  /root/.screen/ | grep $NAME`
+            screenname=`echo $screenlist | cut -d'.' -f 2`
+            if [ "$screenname.git" = "$NAME" ];then
+            echo "$NAME is alredy running!"
+            echo "Run deamon stop or deamon restart"
+            else
+            d_start
+            fi
+            ;;
+        stop)
+            d_stop
+        ;;
+
+        restart|reload|force-reload)
+            d_stop
+            d_start
+        ;;
+ 
+        force-stop)
+            d_stop
+            sudo killall -q $id|| true
+            sleep 2
+            sudo killall -q -9 $id || true
+        ;;
+
+        status)
+        if [ -e /home/git/deployservice/$NAME ]; then
+            screenlist=`sudo ls  /root/.screen/ | grep $NAME`
+            screenname=`echo $screenlist | cut -d'.' -f 2`
+            if [ "$screenname.git" = "$NAME" ];then
+            echo -e "\e[32m● \e[39m $NAME"
+            echo -e "   status: \e[32m active (running) \e[39m" 
+            else
+            echo -e "\e[91m● \e[39m $NAME"
+            echo -e "   status: \e[91m inactive (dead) \e[39m"
+            fi
+            echo ""
+            tail "/var/log/hebergement/$NAME" -n 3
+        else
+            echo -e "\e[91m● \e[39m $NAME"
+            echo -e "   status: \e[91m not-found (Reason: No such file or directory)\e[39m"
+        fi
+        ;;
+        log)
+            tail "/var/log/hebergement/$NAME" -f 
+        ;;
+        clog)
+        cat "/var/log/hebergement/$NAME"
+        ;;
+        *)
+            echo "Usage: deamon {start|stop|force-stop|restart|reload|force-reload|status} [daemon name] "
+            exit 1
+        ;;
+esac
+else
+if [ "$1" = "list" ]; then
+nbligne=`ls /home/git/deployservice/ | wc -l`
+i=1
+while (( i <= nbligne ));do
+    list=`ls /home/git/deployservice/ | sed -n $i"p"`
+    screenlist=`sudo ls  /root/.screen/ | grep $list`
+    screenname=`echo $screenlist | cut -d'.' -f 2`
+    if [ "$screenname.git" = "$list" ];then
+    color='\e[32m'
+    else
+    color='\e[91m'
+    fi
+    echo -e "$color● \e[39m $list"
+    ((i++))
+done
+elif [ "$1" = "listrep" ]; then
+list= ls /home/git/rep/
+echo "$list"
+elif [ "$1" = "sendlist" ]; then
+nbligne=`ls /home/git/deployservice/ | wc -l`
+i=1
+    list=`ls /home/git/deployservice/`
+    echo $list
+else
+echo  "Usage: deamon {start|stop|force-stop|restart|reload|force-reload|status|list} [daemon name]"
+fi
+fi
+exit 0

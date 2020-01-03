@@ -1,0 +1,33 @@
+GIT_DIR="/home/git/rep/$GIT_NAME"
+TARGET="/home/git/deploy/$GIT_NAME"
+if [ -d "/root/.screen/" ]; then
+screenlist=`sudo ls /root/.screen/ | grep $GIT_NAME`
+screenname=`echo $screenlist | cut -d'.' -f 2`
+screenid= `echo $screenlist | cut -d '.' -f 1`
+fi
+echo "Deploy in progress..."
+git --work-tree=$TARGET --git-dir=$GIT_DIR checkout -f
+cd $TARGET
+echo "installing nodejs package"
+npm i
+cd $TARGET
+if [ -e "./procfile" ]; then
+echo "#!/bin/sh" > /home/git/deployservice/$GIT_NAME
+echo "cd $TARGET" >> /home/git/deployservice/$GIT_NAME
+cat procfile >> /home/git/deployservice/$GIT_NAME
+chmod +x /home/git/deployservice/$GIT_NAME
+echo "Launching..."
+if [ "$screenname.git" = "$GIT_NAME" ]; then
+/home/git/script/bin/deamon stop $GIT_NAME
+fi
+/home/git/script/bin/deamon start $GIT_NAME
+screenlist=`sudo ls /root/.screen/ | grep $GIT_NAME`
+screenname=`echo $screenlist | cut -d'.' -f 2`
+if [ "$screenname.git" = "$GIT_NAME" ]; then
+echo "Sucessfully launching."
+else
+echo "An error was occured try for log : deamon status $GIT_NAME"
+fi
+else
+echo "Warning: procfile not present, not executing."
+fi 
