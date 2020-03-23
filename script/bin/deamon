@@ -7,7 +7,6 @@ d_start () {
     screen -dmS $NAME /home/git/script/exec.sh $NAME
     screenlist=`sudo ls /root/.screen/ | grep $NAME`
     screenname=`echo $screenlist | cut -d'.' -f 2`
-    echo $screenname
     if [ "$screenname.git" = "$NAME" ];then
     echo "$NAME successfuly started."
     else
